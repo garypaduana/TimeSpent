@@ -345,13 +345,13 @@ public class TimeSpentGui {
 				if(coreTimes.get(SINCE_LAST_MOVEMENT_TIME).getTime() <= chargeCodes.get(activeChargeCode).getIdleThreshold()){
 					chargeCodes.get(activeChargeCode).getTime().increment();
 					
-					if(chargeCodes.get(activeChargeCode).getTime().getTime() % 10 == 0){
+					if(chargeCodes.get(activeChargeCode).getTime().getTime() % persistInterval == 0){
 						persistAll();
 					}
 				}
 				else{
 					coreTimes.get(IDLE_TIME).increment();
-					if(coreTimes.get(IDLE_TIME).getTime() % 10 == 0){
+					if(coreTimes.get(IDLE_TIME).getTime() % persistInterval == 0){
 						persistAll();
 					}
 				}
