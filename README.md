@@ -12,7 +12,7 @@ TimeSpent
 Build
 ---
 
-`gradle shadowJar` creates an executable jar file in ./build/libs
+`gradle shadowJar` creates an executable jar file in `./build/libs`
 
 
 
