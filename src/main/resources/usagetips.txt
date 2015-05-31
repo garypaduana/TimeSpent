@@ -1,1 +1,2 @@
 Right-click on each time to pause, resume, reset, and modify.
+Progress is automatically saved to a file as you work to prevent loss.

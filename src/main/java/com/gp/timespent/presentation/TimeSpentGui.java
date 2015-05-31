@@ -17,18 +17,13 @@
 
 package com.gp.timespent.presentation;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,19 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-import javax.swing.BorderFactory;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.ImageIcon;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
-import javax.swing.Timer;
+import javax.swing.*;
 
 import com.gp.timespent.domain.BasicTime;
 import com.gp.timespent.domain.ChargeCode;
@@ -86,6 +69,7 @@ public class TimeSpentGui {
 		
 	private JComboBox clinComboBox = new JComboBox();
 	private JLabel clinTimeLabel = new JLabel();
+	private Button addRemoveButton = new Button();
 	
 	private JFrame timespentFrame = new JFrame();
 	private JPanel mainPanel = new JPanel();
@@ -153,11 +137,21 @@ public class TimeSpentGui {
 	}
 	
 	private void showTips() throws IOException {
-		List<String> tips = FileUtil.getTextFromFile("./resources/usagetips.txt");
+		InputStream is = Thread.currentThread().getContextClassLoader()
+							.getResourceAsStream("usagetips.txt");
+
+		BufferedReader br = new BufferedReader(new InputStreamReader(is));
+		String line;
+		List<String> tips = new ArrayList<String>();
+
+		while((line = br.readLine()) != null){
+			tips.add(line);
+		}
+
 		if(tips.size() == 0){
 			return;
 		}
-		
+
 		Collections.shuffle(tips);
 		JOptionPane.showMessageDialog(null, tips.get(0), "Usage Tips", JOptionPane.INFORMATION_MESSAGE, null);
 	}
@@ -198,6 +192,7 @@ public class TimeSpentGui {
 		
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
+
 				if(windowTitle.equals(Title.NAME)){
 					timespentFrame.setTitle(PROJECT_NAME);
 				}
@@ -248,8 +243,16 @@ public class TimeSpentGui {
 								
 				clinComboBox.setMinimumSize(new Dimension(120,20));
 				clinComboBox.setPreferredSize(new Dimension(120,20));
-				mainPanel.add(clinComboBox, getDefaultGridBagConstraints(0, 4));
-				
+				addRemoveButton.setLabel("+ -");
+				addRemoveButton.setPreferredSize(new Dimension(30, 20));
+				addRemoveButton.setMaximumSize(new Dimension(30, 20));
+				Panel p = new Panel();
+				p.setLayout(new FlowLayout());
+				p.add(clinComboBox);
+				p.add(addRemoveButton);
+
+				mainPanel.add(p, getDefaultGridBagConstraints(0, 4));
+
 				clinTimeLabel.setText(ZERO_TIME);
 				clinTimeLabel.setBorder(BorderFactory.createLineBorder(Color.green));
 				mainPanel.add(clinTimeLabel, getDefaultGridBagConstraints(1, 4));
@@ -298,20 +301,28 @@ public class TimeSpentGui {
 				chargeCodeChanged();				
 			}
 		});
+
+		addRemoveButton.addActionListener(new ActionListener(){
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				showAddRemovePopup(addRemoveButton, 0, 0);
+			}
+		});
 		
 		MouseObserver mo = new MouseObserver(timespentFrame);
-		mo.addMouseMotionListener(new MouseMotionListener(){
-				public void mouseMoved(MouseEvent e){
-					coreTimes.get(SINCE_LAST_MOVEMENT_TIME).setTime(0);
-					
-					if(!movementTimer.isRunning()){
-						movementTimer.start();
-					}
-				}
+		mo.addMouseMotionListener(new MouseMotionListener() {
+			public void mouseMoved(MouseEvent e) {
+				coreTimes.get(SINCE_LAST_MOVEMENT_TIME).setTime(0);
 
-				public void mouseDragged(MouseEvent e) {
-					// This case is not important
+				if (!movementTimer.isRunning()) {
+					movementTimer.start();
 				}
+			}
+
+			public void mouseDragged(MouseEvent e) {
+				// This case is not important
+			}
 		});
 		mo.start();
 		
@@ -533,9 +544,9 @@ public class TimeSpentGui {
 						
 						JPopupMenu popup = new JPopupMenu();
 						
-						JMenuItem pauseMenuItem = new JMenuItem("Pause All Charge Codes");
-						JMenuItem resumeMenuItem = new JMenuItem("Resume All Charge Codes");
-						JMenuItem resetMenuItem = new JMenuItem("Reset All Charge Codes");
+						JMenuItem pauseMenuItem = new JMenuItem("Pause All Projects");
+						JMenuItem resumeMenuItem = new JMenuItem("Resume All Projects");
+						JMenuItem resetMenuItem = new JMenuItem("Reset All Projects");
 											
 						pauseMenuItem.addActionListener(new ActionListener(){
 							@Override
@@ -578,53 +589,54 @@ public class TimeSpentGui {
 	
 	public class ChargeCodeClickListener extends MouseAdapter{
 		
-		public ChargeCodeClickListener(){
-			
-		}
-		
 		@Override
 		public void mouseClicked(MouseEvent mouseEvent){
-			
 			final MouseEvent e = mouseEvent;
-			
 			SwingUtilities.invokeLater(new Runnable(){
 			
 				public void run(){
-					if(e.getButton() == MouseEvent.BUTTON2 || e.getButton() == MouseEvent.BUTTON3){
-					
-						JPopupMenu popup = new JPopupMenu();
-						
-						JMenuItem deleteMenuItem = new JMenuItem("Delete");
-						JMenuItem addNewMenuItem = new JMenuItem("Add New...");
-						
-						deleteMenuItem.addActionListener(new ActionListener(){
-							@Override
-							public void actionPerformed(ActionEvent actionEvent){
-								removeCurrentChargeCode();
-								persistAll();
-							}
-						});
-						
-						addNewMenuItem.addActionListener(new ActionListener(){
-							@Override
-							public void actionPerformed(ActionEvent actionEvent){
-								addNew();
-								persistAll();
-							}
-						});
-						
-						popup.add(addNewMenuItem);					
-						popup.add(deleteMenuItem);
-						popup.show(e.getComponent(), e.getX(), e.getY());
+					if(e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON2 || e.getButton() == MouseEvent.BUTTON3){
+						showAddRemovePopup(e.getComponent(), e.getX(), e.getY());
 					}
 				}
 			});
 		}
 	}
+
+	private void showAddRemovePopup(Component component, int x, int y){
+		JPopupMenu popup = new JPopupMenu();
+
+		JMenuItem deleteMenuItem = new JMenuItem("Delete");
+		JMenuItem addNewMenuItem = new JMenuItem("Add New...");
+
+		deleteMenuItem.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent actionEvent){
+				removeCurrentChargeCode();
+				persistAll();
+			}
+		});
+
+		addNewMenuItem.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent actionEvent){
+				addNew();
+				persistAll();
+			}
+		});
+
+		popup.add(addNewMenuItem);
+		popup.add(deleteMenuItem);
+		popup.show(component, x, y);
+	}
 	
 	private void addNew(){
 		String name = JOptionPane.showInputDialog("Enter the project name:");
-		
+
+		if(name == null){
+			return;
+		}
+
 		if(name.length() <= 0){
 			JOptionPane.showMessageDialog(null, "Invalid name! Please try again.");
 			return;
@@ -667,7 +679,7 @@ public class TimeSpentGui {
 				chargeCodeChanged();
 			}
 			else{
-				JOptionPane.showMessageDialog(null, "Cannot remove default charge code!");
+				JOptionPane.showMessageDialog(null, "Cannot remove default project!");
 			}
 		}
 	}
